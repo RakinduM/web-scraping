@@ -8,7 +8,7 @@ import json
 import unicodedata
 import html
 
-def scrape_section_content(section_url, main_url):
+def scrape_section_content(section_url, main_url, is_aws=False):
     """
     Scrape the content from a specific section URL.
     """
@@ -21,62 +21,61 @@ def scrape_section_content(section_url, main_url):
 
     # Extract data
     content = []
-    for article in soup.find_all("article"):
-        article_data = {}
+    if is_aws:
+        # For AWS, scrape data from the div with id="main-col-body"
+        main_body = soup.find('div', id='main-col-body')
+        if main_body:
+            current_section = None
+            for element in main_body.find_all(['h1', 'h2', 'h3', 'p']):
+                if element.name in ['h1', 'h2', 'h3']:
+                    # Start a new section for each heading
+                    if current_section:
+                        content.append(current_section)
+                    current_section = {
+                        "heading": element.get_text(strip=True),
+                        "texts": []
+                    }
+                elif current_section and element.name == 'p':
+                    # Add paragraphs to the current section
+                    text = element.get_text(strip=True)
+                    if text:
+                        current_section["texts"].append(text)
 
-        # Get the first <p> tag inside the article
-        first_paragraph = article.find("p")
-        if first_paragraph:
-            text = first_paragraph.get_text(strip=True)
-            cleaned_text = unicodedata.normalize("NFKD", html.unescape(text))
-            final_text = cleaned_text.encode("utf-8").decode("utf-8")
-            article_data['Info'] = final_text
+            # Append the last section after the loop ends
+            if current_section:
+                content.append(current_section)
+    else:
+        # For React or other, scrape from articles
+        for article in soup.find_all("article"):
+            article_data = {}
 
-        # Get all <a> tags within unordered <ul> or ordered <ol> lists
-        links = []
-        for ul in article.find_all(["ul", "ol"]):  # Find both unordered and ordered lists
-            for li in ul.find_all("li"):  # Look for list items
-                for a in li.find_all("a", href=True):  # Extract <a> tags with href attributes
-                    sub_url = requests.compat.urljoin(main_url, a['href'])
-                    links.append({
-                        'Sub-Topic': a.get_text(strip=True),
-                        'link': sub_url
-                    })
+            # Get the first <p> tag inside the article
+            first_paragraph = article.find("p")
+            if first_paragraph:
+                text = first_paragraph.get_text(strip=True)
+                cleaned_text = unicodedata.normalize("NFKD", html.unescape(text))
+                final_text = cleaned_text.encode("utf-8").decode("utf-8")
+                article_data['Info'] = final_text
 
-        if links:
-            article_data['links'] = links
+            # Get all <a> tags within unordered <ul> or ordered <ol> lists
+            links = []
+            for ul in article.find_all(["ul", "ol"]):  # Find both unordered and ordered lists
+                for li in ul.find_all("li"):  # Look for list items
+                    for a in li.find_all("a", href=True):  # Extract <a> tags with href attributes
+                        sub_url = requests.compat.urljoin(main_url, a['href'])
+                        links.append({
+                            'Sub-Topic': a.get_text(strip=True),
+                            'link': sub_url
+                        })
 
-        # Only add article data if it contains valid content
-        if article_data:
-            content.append(article_data)
+            if links:
+                article_data['links'] = links
+
+            # Only add article data if it contains valid content
+            if article_data:
+                content.append(article_data)
 
     return content
-
-def scrape_aws_section_urls(main_url):
-    """
-    Scrape section URLs dynamically from the AWS Lambda documentation page.
-    """
-    response = requests.get(main_url)
-    if response.status_code != 200:
-        print(f"Failed to fetch {main_url}: {response.status_code}")
-        return []
-
-    soup = BeautifulSoup(response.text, 'html.parser')
-    section_urls = []
-
-    # Use a flexible approach to locate the container
-    container = soup.find('div', class_=lambda value: value and 'awsui_list-container' in value)
-    if not container:
-        print("Failed to locate the AWS section container. The content might be dynamically loaded.")
-        return []
-
-    # Extract all <a> tags within the container
-    for a_tag in container.find_all('a', href=True):
-        link_text = a_tag.get_text(strip=True)
-        link_url = requests.compat.urljoin(main_url, a_tag['href'])
-        section_urls.append({'title': link_text, 'url': link_url})
-
-    return section_urls
 
 def scrape_aws_section_urls_with_selenium(main_url, section_titles):
     """
@@ -151,7 +150,8 @@ def scrape_section(url, source, section_titles=None):
         section_url = section['url']
 
         # Scrape content from the section URL
-        section_content = scrape_section_content(section_url, url)
+        is_aws = source == "aws_lambda"
+        section_content = scrape_section_content(section_url, url, is_aws=is_aws)
 
         # Add the section data in the required format
         section_data = {
@@ -167,7 +167,6 @@ def scrape_section(url, source, section_titles=None):
         page_data.append(section_data)
 
     return page_data
-
 
 def main():
     # React documentation scraping
