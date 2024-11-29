@@ -29,8 +29,8 @@ Ensure you have the following installed:
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/documentation-scraper.git
-   cd documentation-scraper
+   git clone https://github.com/RakinduM/web-scraping.git
+   cd web-scaping
 
 2.  Install the dependencies:
 
