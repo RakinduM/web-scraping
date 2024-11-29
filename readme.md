@@ -31,3 +31,17 @@ Ensure you have the following installed:
    ```bash
    git clone https://github.com/yourusername/documentation-scraper.git
    cd documentation-scraper
+
+2.  Install the dependencies:
+
+         pip install -r requirements.txt
+
+---
+
+### Running Locally
+
+Once the dependencies are installed, you can run the application locally using:
+
+     python main.py
+
+
