@@ -1,5 +1,5 @@
 import json
-from scraper import scrape_section  # Import functions from the original file
+from scraper import scrape_section
 
 def main():
     # React documentation scraping
@@ -26,7 +26,6 @@ def main():
     ]
     aws_data = scrape_section(aws_url, aws_source, aws_section_titles)
 
-    # Combine all scraped data
     all_data = react_data + aws_data
 
     # Save to JSON

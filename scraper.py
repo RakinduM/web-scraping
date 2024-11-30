@@ -4,17 +4,15 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import json
 import unicodedata
 import html
-
 
 def fetch_html(url, use_selenium=False, wait_selector=None):
     """
     Fetch the HTML content of a URL using Requests or Selenium.
     """
     if use_selenium:
-        driver = webdriver.Chrome()  # Replace with the path to your ChromeDriver if needed
+        driver = webdriver.Chrome()
         try:
             driver.get(url)
             if wait_selector:
@@ -31,7 +29,7 @@ def fetch_html(url, use_selenium=False, wait_selector=None):
             print(f"Failed to fetch {url}: {response.status_code}")
             return None
         return response.text
-    pass
+
 
 
 def parse_section_content(soup, main_url, is_aws=False):
@@ -92,13 +90,11 @@ def parse_section_content(soup, main_url, is_aws=False):
             if article_data:
                 content.append(article_data)
     return content
-    pass
+
 
 
 def scrape_aws_section_urls(main_url, section_titles):
-    """
-    Scrape specific section URLs dynamically from the AWS Lambda documentation page using Selenium.
-    """
+
     html_content = fetch_html(main_url, use_selenium=True, wait_selector='awsui_list-container_l0dv0_1k6s2_221')
     if not html_content:
         return []
@@ -119,7 +115,7 @@ def scrape_aws_section_urls(main_url, section_titles):
                 'url': requests.compat.urljoin(main_url, a_tag['href'])
             })
     return section_urls
-    pass
+
 
 
 def scrape_section(url, source, section_titles=None):
@@ -159,4 +155,4 @@ def scrape_section(url, source, section_titles=None):
             "sections": [{"content": section_content}]
         })
     return page_data
-    pass
+
